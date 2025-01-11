@@ -82,8 +82,6 @@ COPY --from=builder /app/riscv-gcc /app/riscv-gcc
 SHELL ["/bin/bash", "-c"] 
 
 ENV PATH="/app/gvsoc-venv/bin:$PATH"
-# do not put standalone GVSOC in path, use the one in PULP-SDK
-# ENV PATH="/app/gvsoc/install/bin:$PATH"
 ENV PATH="/app/riscv-gcc/bin:$PATH"
 
 # install deps
@@ -107,8 +105,16 @@ libsdl2-ttf-dev
 
 # install SDK (different version of GVSOC!)
 RUN git clone --recursive https://github.com/pulp-platform/pulp-sdk
-RUN cd pulp-sdk; . configs/pulp-open.sh; make build
+# patch SDK to use new GVSOC
+RUN sed -i '312,313d' /app/pulp-sdk/rtos/pulpos/common/rules/pulpos/default_rules.mk
+# source SDK when entering the docker environment
+RUN echo ". /app/pulp-sdk/configs/pulp-open.sh" >> /etc/bash.bashrc
+
+# add local user
+RUN useradd -ms /bin/bash pulp
+USER pulp
 
 # prepare environment
 ENV PULP_RISCV_GCC_TOOLCHAIN=/app/riscv-gcc
-ENTRYPOINT [ "/bin/bash /app/pulp-sdk/configs/pulp-open.sh" ]
+ENV PATH="/app/gvsoc/install/bin:$PATH"
+ENTRYPOINT [ "/bin/bash" ]
