@@ -133,6 +133,7 @@ ENV PATH="/app/cargo/bin:$PATH"
 RUN cargo install bender
 
 # install vim,ssh
+RUN DEBIAN_FRONTEND=noninteractive apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends --allow-unauthenticated vim ssh
 
 # add local user
