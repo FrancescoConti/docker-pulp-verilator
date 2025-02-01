@@ -103,12 +103,37 @@ texinfo \
 pkg-config \
 libsdl2-ttf-dev
 
+# install Verilator deps
+RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends --allow-unauthenticated \
+git help2man perl python3 make autoconf g++ flex bison ccache \
+libgoogle-perftools-dev numactl perl-doc \
+libfl2  \
+libfl-dev \
+zlib1g zlib1g-dev
+
+# install Verilator
+RUN git clone https://github.com/verilator/verilator verilator-build
+RUN cd verilator-build; git checkout stable; autoconf; ./configure --prefix=/app/verilator
+RUN cd verilator-build; make -j `nproc`
+RUN cd verilator-build; make install
+
 # install SDK (different version of GVSOC!)
 RUN git clone --recursive https://github.com/pulp-platform/pulp-sdk
 # patch SDK to use new GVSOC
 RUN sed -i '312,313d' /app/pulp-sdk/rtos/pulpos/common/rules/pulpos/default_rules.mk
 # source SDK when entering the docker environment
 RUN echo ". /app/pulp-sdk/configs/pulp-open.sh" >> /etc/bash.bashrc
+
+# install Bender deps
+RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf > rustup-init.sh
+ENV CARGO_HOME=/app/cargo
+ENV RUSTUP_HOME=/app/rustup
+RUN chmod +x rustup-init.sh; ./rustup-init.sh -y
+ENV PATH="/app/cargo/bin:$PATH"
+RUN cargo install bender
+
+# install vim,ssh
+RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends --allow-unauthenticated vim ssh
 
 # add local user
 RUN useradd -ms /bin/bash pulp
@@ -117,4 +142,8 @@ USER pulp
 # prepare environment
 ENV PULP_RISCV_GCC_TOOLCHAIN=/app/riscv-gcc
 ENV PATH="/app/gvsoc/install/bin:$PATH"
+ENV PATH="/app/verilator/bin:$PATH"
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 ENTRYPOINT [ "/bin/bash" ]
