@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --rm -it -v "$(pwd)":/workdir -w /workdir gvsoc-container
+docker run --rm -it -v "$(pwd)":/workdir -w /workdir fconti/pulp-verilator
